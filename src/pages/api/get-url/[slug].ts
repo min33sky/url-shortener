@@ -1,6 +1,6 @@
 // Next.js API route support: https://nextjs.org/docs/api-routes/introduction
 import type { NextApiRequest, NextApiResponse } from 'next';
-import { prisma } from '../../db/client';
+import { prisma } from '../../../db/client';
 
 export default async function handler(
   req: NextApiRequest,
@@ -27,5 +27,8 @@ export default async function handler(
     return res.status(404).json({ message: 'Slug not found.' });
   }
 
+  res.setHeader('Content-Type', 'application/json');
+  res.setHeader('Access-Control-Allow-Origin', '*');
+  res.setHeader('Cache-Control', 's-maxage=1000000000, stale-while-revalidate');
   return res.json(data);
 }
