@@ -1,3 +1,21 @@
+@import url('https://fonts.googleapis.com/css2?family=Nanum+Gothic:wght@400;700&family=Poor+Story&family=Poppins:wght@400;700&display=swap');
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+@layer base {
+  body {
+    font-family: 'Poppins', sans-serif;
+  }
+}
+
+@layer components {
+  .btn {
+    @apply flex-1 rounded bg-violet-500 text-slate-100  p-2 font-bold cursor-pointer mt-1 transition hover:bg-violet-600;
+  }
+
+  .input {
+    @apply flex-1 border-b-2 border-violet-300 bg-transparent outline-none text-slate-600 text-lg;
+  }
+}

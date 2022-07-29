@@ -10,13 +10,12 @@ export const appRouter = trpc
       slug: z.string(),
     }),
     async resolve({ ctx, input }) {
-      const count = await prisma.shortLink.count({
+      const isUsed = await prisma.shortLink.findUnique({
         where: {
           slug: input.slug,
         },
       });
-
-      return { used: count > 0 };
+      return { used: !!isUsed };
     },
   })
   .mutation('createSlug', {
@@ -32,7 +31,6 @@ export const appRouter = trpc
             url: input.url,
           },
         });
-
         return result;
       } catch (e) {
         console.error(e);

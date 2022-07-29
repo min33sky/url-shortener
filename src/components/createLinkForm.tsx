@@ -1,9 +1,8 @@
 import type { NextPage } from 'next';
-import { useState } from 'react';
+import React, { useState } from 'react';
 import { nanoid } from 'nanoid';
 import debounce from 'lodash/debounce';
 import copy from 'copy-to-clipboard';
-import classNames from 'classnames';
 import { trpc } from '@/utils/trpc';
 
 type Form = {
@@ -20,79 +19,86 @@ const CreateLinkForm: NextPage = () => {
     refetchOnMount: false,
     refetchOnWindowFocus: false,
   });
-  const createSlug = trpc.useMutation(['createSlug']);
 
-  const input =
-    'text-black my-1 p-2 bg-white border shadow-sm border-slate-300 placeholder-slate-400 focus:outline-none focus:border-pink-500 focus:ring-pink-500 block w-full rounded-md sm:text-sm focus:ring-1';
+  const { mutate, isSuccess, reset } = trpc.useMutation(['createSlug']);
 
-  const slugInput = classNames(input, {
-    'border-red-500': slugCheck.isFetched && slugCheck.data!.used,
-    'text-red-500': slugCheck.isFetched && slugCheck.data!.used,
-  });
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    mutate({ ...form });
+  };
 
-  if (createSlug.status === 'success') {
+  /**
+   *? Slug 입력 핸들러
+   */
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setForm({
+      ...form,
+      [e.target.name]: e.target.value,
+    });
+    debounce(slugCheck.refetch, 100);
+  };
+
+  if (isSuccess) {
     return (
-      <>
-        <div className="flex justify-center items-center">
-          <h1>{`${url}/${form.slug}`}</h1>
+      <section className="bg-slate-200 w-[90vmin] max-w-2xl px-4 py-10 rounded-md shadow-md flex flex-col justify-center items-center">
+        <div className="flex justify-center items-center space-x-4">
+          <h1 className="text-lg">{`${url}/${form.slug}`}</h1>
           <input
             type="button"
             value="Copy Link"
-            className="rounded bg-pink-500 py-1.5 px-1 font-bold cursor-pointer ml-2"
+            className="btn"
             onClick={() => {
               copy(`${url}/${form.slug}`);
             }}
           />
         </div>
+
         <input
           type="button"
           value="Reset"
-          className="rounded bg-pink-500 py-1.5 px-1 font-bold cursor-pointer m-5"
+          className="btn"
           onClick={() => {
-            createSlug.reset();
+            reset();
             setForm({ slug: '', url: '' });
           }}
         />
-      </>
+      </section>
     );
   }
 
   return (
     <form
-      onSubmit={(e) => {
-        e.preventDefault();
-        createSlug.mutate({ ...form });
-      }}
-      className="flex flex-col justify-center h-screen sm:w-2/3 md:w-1/2 lg:w-1/3"
+      onSubmit={handleSubmit}
+      className="flex flex-col space-y-4 bg-slate-100 rounded-md shadow-md py-10 px-4 justify-center w-[90vmin] max-w-2xl"
     >
-      {slugCheck.data?.used && (
-        <span className="font-medium mr-2 text-center text-red-500">
-          Slug already in use.
-        </span>
-      )}
-      <div className="flex items-center">
-        <span className="font-medium mr-2">{url}/</span>
-        <input
-          type="text"
-          onChange={(e) => {
-            setForm({
-              ...form,
-              slug: e.target.value,
-            });
-            debounce(slugCheck.refetch, 100);
-          }}
-          minLength={1}
-          placeholder="rothaniel"
-          className={slugInput}
-          value={form.slug}
-          pattern={'^[-a-zA-Z0-9]+$'}
-          title="Only alphanumeric characters and hypens are allowed. No spaces."
-          required
-        />
+      <h1 className="text-center text-2xl text-violet-700">URL Shortener</h1>
+
+      <span className="font-medium h-4 text-center text-red-500">
+        {slugCheck.data?.used ? 'Slug already in use...🤗' : ''}
+      </span>
+
+      <div aria-label="Slug 입력" className="flex flex-wrap sm:space-x-2">
+        <div className="flex justify-center items-center">
+          <span className="text-slate-600 text-lg">{url}/</span>
+          <input
+            type="text"
+            name="slug"
+            onChange={handleChange}
+            minLength={1}
+            placeholder="ex) newyork"
+            className={`input ${
+              slugCheck.data?.used && 'text-red-500 border-red-500'
+            }`}
+            value={form.slug}
+            pattern={'^[-a-zA-Z0-9]+$'}
+            title="Only alphanumeric characters and hypens are allowed. No spaces."
+            required
+          />
+        </div>
         <input
           type="button"
           value="Random"
-          className="rounded bg-pink-500 py-1.5 px-1 font-bold cursor-pointer ml-2"
+          className="btn"
           onClick={() => {
             const slug = nanoid();
             setForm({
@@ -103,21 +109,31 @@ const CreateLinkForm: NextPage = () => {
           }}
         />
       </div>
-      <div className="flex items-center">
-        <span className="font-medium mr-2">Link</span>
+
+      <div
+        aria-label="URL 입력"
+        className="flex justify-between items-center space-x-3"
+      >
+        <span className="text-violet-500 text-lg">Link</span>
         <input
           type="url"
-          onChange={(e) => setForm({ ...form, url: e.target.value })}
-          placeholder="https://google.com"
-          className={input}
+          name="url"
+          onChange={handleChange}
+          placeholder="https://www.google.com/"
+          className="input"
           required
         />
       </div>
+
       <input
         type="submit"
         value="Create"
-        className="rounded bg-pink-500 p-1 font-bold cursor-pointer mt-1"
-        disabled={slugCheck.isFetched && slugCheck.data!.used}
+        className={`btn disabled:bg-slate-400 disabled:cursor-not-allowed`}
+        disabled={
+          (slugCheck.isFetched && slugCheck.data!.used) ||
+          form.slug === '' ||
+          form.url === ''
+        }
       />
     </form>
   );
