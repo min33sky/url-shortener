@@ -20,6 +20,10 @@ const CreateLinkForm: NextPage = () => {
     refetchOnWindowFocus: false,
   });
 
+  if (slugCheck.error) {
+    console.log('error: ', slugCheck.error);
+  }
+
   const { mutate, isSuccess, reset } = trpc.useMutation(['createSlug']);
 
   const handleSubmit = (e: React.FormEvent) => {
@@ -130,11 +134,16 @@ const CreateLinkForm: NextPage = () => {
         value="Create"
         className={`btn disabled:bg-slate-400 disabled:cursor-not-allowed`}
         disabled={
+          slugCheck.isError ||
           (slugCheck.isFetched && slugCheck.data!.used) ||
           form.slug === '' ||
           form.url === ''
         }
       />
+
+      {slugCheck.isError && (
+        <div className="text-red-500 text-center">Server Error!!</div>
+      )}
     </form>
   );
 };
